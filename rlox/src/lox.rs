@@ -5,7 +5,10 @@ use std::{
     process,
 };
 
+use crate::ast_printer::AstPrinter;
+use crate::parser::Parser;
 use crate::scanner::Scanner;
+use crate::token::{Token, TokenType};
 
 static mut HAD_ERROR: Mutex<bool> = Mutex::new(false);
 
@@ -47,21 +50,31 @@ impl Lox {
                 break;
             }
             Self::run(&line);
+            Self::set_had_error(false);
         }
     }
 
     fn run(source: &str) {
         let mut scanner = Scanner::new(source);
         let tokens = scanner.scan_tokens();
-
-        // for now, just print the tokens
-        for token in tokens {
-            println!("{}", token);
+        let mut parser = Parser::new(&tokens);
+        let expression = parser.parse();
+        if Self::had_error() {
+            return;
         }
+        println!("{}", AstPrinter::new().print(&expression.unwrap()));
     }
 
-    pub fn error(line: usize, message: &str) {
+    pub fn error_on_line(line: usize, message: &str) {
         Self::report(line, "", message);
+    }
+
+    pub fn error_on_token(token: &Token, message: &str) {
+        if token.ttype == TokenType::EOF {
+            Self::report(token.line, "at end", message);
+        } else {
+            Self::report(token.line, &format!("at '{}'", token.lexeme), message);
+        }
     }
 
     fn report(line: usize, loc: &str, message: &str) {

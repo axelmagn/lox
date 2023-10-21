@@ -54,7 +54,7 @@ impl Scanner {
             self.scan_token();
         }
 
-        let token = Token::new(TokenType::EOF, "", &TokenLiteral::None, self.line);
+        let token = Token::new(TokenType::EOF, "", &TokenLiteral::Nil, self.line);
         self.tokens.push(token);
         self.tokens.clone()
     }
@@ -124,7 +124,7 @@ impl Scanner {
                 } else if c.is_alphabetic() {
                     self.scan_identifier();
                 } else {
-                    Lox::error(self.line, &format!("Unexpected character: {}", c));
+                    Lox::error_on_line(self.line, &format!("Unexpected character: {}", c));
                 }
             }
         };
@@ -139,7 +139,7 @@ impl Scanner {
         }
 
         if self.is_at_end() {
-            Lox::error(self.line, "Unterminated string.");
+            Lox::error_on_line(self.line, "Unterminated string.");
             return;
         }
 
@@ -193,7 +193,7 @@ impl Scanner {
     }
 
     fn add_token(&mut self, ttype: TokenType) {
-        self.add_token_literal(ttype, &TokenLiteral::None);
+        self.add_token_literal(ttype, &TokenLiteral::Nil);
     }
 
     fn add_token_literal(&mut self, ttype: TokenType, literal: &TokenLiteral) {

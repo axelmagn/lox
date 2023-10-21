@@ -18,6 +18,56 @@ pub enum Expr {
     },
 }
 
+impl Expr {
+    pub fn new_binary(left: Expr, operator: Token, right: Expr) -> Self {
+        Self::Binary {
+            left: Box::new(left),
+            operator,
+            right: Box::new(right),
+        }
+    }
+
+    pub fn new_grouping(expression: Expr) -> Self {
+        Self::Grouping {
+            expression: Box::new(expression),
+        }
+    }
+
+    pub fn new_literal(literal: TokenLiteral) -> Self {
+        Self::Literal { value: literal }
+    }
+
+    pub fn new_literal_nil() -> Self {
+        Self::Literal {
+            value: TokenLiteral::Nil,
+        }
+    }
+
+    pub fn new_literal_str(value: String) -> Self {
+        Self::Literal {
+            value: TokenLiteral::String(value),
+        }
+    }
+
+    pub fn new_literal_num(value: f64) -> Self {
+        Self::Literal {
+            value: TokenLiteral::Number(value),
+        }
+    }
+
+    pub fn new_literal_bool(value: bool) -> Self {
+        Self::Literal {
+            value: TokenLiteral::Bool(value),
+        }
+    }
+
+    pub fn new_unary(operator: Token, right: Expr) -> Self {
+        Self::Unary {
+            operator,
+            right: Box::new(right),
+        }
+    }
+}
 pub trait ExprVisitor {
     type Result;
 

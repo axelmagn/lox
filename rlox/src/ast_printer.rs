@@ -24,7 +24,7 @@ impl ExprVisitor for AstPrinter {
     }
 
     fn visit_literal(&mut self, value: &TokenLiteral) -> Self::Result {
-        if let &TokenLiteral::None = value {
+        if let &TokenLiteral::Nil = value {
             return "nil".into();
         }
         value.to_string()

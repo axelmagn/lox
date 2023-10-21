@@ -25,7 +25,7 @@ impl fmt::Display for Token {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen,
@@ -85,17 +85,19 @@ impl fmt::Display for TokenType {
 
 #[derive(Debug, Clone)]
 pub enum TokenLiteral {
-    None,
+    Nil,
     String(String),
     Number(f64),
+    Bool(bool),
 }
 
 impl fmt::Display for TokenLiteral {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TokenLiteral::None => f.write_str("nil"),
+            TokenLiteral::Nil => f.write_str("nil"),
             TokenLiteral::String(s) => f.write_str(s),
             TokenLiteral::Number(n) => write!(f, "{}", n),
+            TokenLiteral::Bool(b) => write!(f, "{}", b),
         }
     }
 }
