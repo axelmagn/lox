@@ -1,0 +1,10 @@
+#!/bin/bash
+# set -exuo pipefail
+
+readonly SCRIPT_DIR=$(dirname "$0")
+readonly GRADLEW="${SCRIPT_DIR}/gradlew"
+
+
+pushd "$SCRIPT_DIR"
+"$GRADLEW" generateAst --args src/main/java/com/craftinginterpreters/lox
+popd

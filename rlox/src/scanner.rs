@@ -182,8 +182,6 @@ impl Scanner {
         self.add_token(ttype);
     }
 
-    fn scan_block_comment() {}
-
     fn is_at_end(&self) -> bool {
         self.current >= self.source.len()
     }

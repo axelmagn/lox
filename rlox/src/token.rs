@@ -2,10 +2,10 @@ use core::fmt;
 
 #[derive(Debug, Clone)]
 pub struct Token {
-    ttype: TokenType,
-    lexeme: String,
-    literal: TokenLiteral,
-    line: usize,
+    pub ttype: TokenType,
+    pub lexeme: String,
+    pub literal: TokenLiteral,
+    pub line: usize,
 }
 
 impl Token {
@@ -92,6 +92,10 @@ pub enum TokenLiteral {
 
 impl fmt::Display for TokenLiteral {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(self, f)
+        match self {
+            TokenLiteral::None => f.write_str("nil"),
+            TokenLiteral::String(s) => f.write_str(s),
+            TokenLiteral::Number(n) => write!(f, "{}", n),
+        }
     }
 }

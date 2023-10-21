@@ -1,6 +1,4 @@
-mod lox;
-mod scanner;
-mod token;
+use crate::lox;
 
 fn main() {
     lox::Lox::run_cli();

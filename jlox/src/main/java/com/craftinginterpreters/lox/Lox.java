@@ -7,6 +7,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import com.craftinginterpreters.tool.GenerateAst;
 
 public class Lox {
   static boolean hadError = false;
@@ -16,7 +17,11 @@ public class Lox {
       System.out.println("Usage: jlox [script]");
       System.exit(64);
     } else if (args.length == 1) {
-      runFile(args[0]);
+      if (args[0] == "--generate-ast") {
+        GenerateAst.main(args);
+      } else {
+        runFile(args[0]);
+      }
     } else {
       runPrompt();
     }

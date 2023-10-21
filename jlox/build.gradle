@@ -39,3 +39,17 @@ application {
 run {
     standardInput = System.in
 }
+
+task generateAst(type: JavaExec) {
+    group = "Execution"
+    description = "Generate AST"
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "com.craftinginterpreters.tool.GenerateAst"
+}
+
+task printTestAst(type: JavaExec) {
+    group = "Execution"
+    description = "Print Test AST"
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "com.craftinginterpreters.lox.AstPrinter"
+}
