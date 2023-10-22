@@ -5,12 +5,14 @@ use std::{
     process,
 };
 
-use crate::ast_printer::AstPrinter;
+use crate::errors::RuntimeError;
+use crate::interpreter::Interpreter;
 use crate::parser::Parser;
 use crate::scanner::Scanner;
 use crate::token::{Token, TokenType};
 
 static mut HAD_ERROR: Mutex<bool> = Mutex::new(false);
+static mut HAD_RUNTIME_ERROR: Mutex<bool> = Mutex::new(false);
 
 pub struct Lox;
 
@@ -37,6 +39,9 @@ impl Lox {
         if Self::had_error() {
             process::exit(65);
         }
+        if Self::had_runtime_error() {
+            process::exit(70);
+        }
     }
 
     fn run_prompt() {
@@ -62,7 +67,8 @@ impl Lox {
         if Self::had_error() {
             return;
         }
-        println!("{}", AstPrinter::new().print(&expression.unwrap()));
+        let mut interpreter = Interpreter::new();
+        interpreter.interpret(&expression.unwrap());
     }
 
     pub fn error_on_line(line: usize, message: &str) {
@@ -77,6 +83,11 @@ impl Lox {
         }
     }
 
+    pub fn runtime_error(error: RuntimeError) {
+        println!("{}\n[line {}]", error.msg, error.token.line);
+        Self::set_had_runtime_error(true);
+    }
+
     fn report(line: usize, loc: &str, message: &str) {
         write!(io::stderr(), "[line {}] Error{}: {}", line, loc, message).unwrap();
         Self::set_had_error(true);
@@ -89,6 +100,16 @@ impl Lox {
     fn set_had_error(val: bool) {
         unsafe {
             *HAD_ERROR.lock().unwrap() = val;
+        }
+    }
+
+    fn had_runtime_error() -> bool {
+        unsafe { *HAD_RUNTIME_ERROR.lock().unwrap() }
+    }
+
+    fn set_had_runtime_error(val: bool) {
+        unsafe {
+            *HAD_RUNTIME_ERROR.lock().unwrap() = val;
         }
     }
 }

@@ -13,24 +13,24 @@ impl AstPrinter {
 }
 
 impl ExprVisitor for AstPrinter {
-    type Result = String;
+    type Output = String;
 
-    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Self::Result {
+    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Self::Output {
         self.parenthesize(&operator.lexeme, &vec![left, right])
     }
 
-    fn visit_grouping(&mut self, expression: &Expr) -> Self::Result {
+    fn visit_grouping(&mut self, expression: &Expr) -> Self::Output {
         self.parenthesize("group", &vec![expression])
     }
 
-    fn visit_literal(&mut self, value: &TokenLiteral) -> Self::Result {
+    fn visit_literal(&mut self, value: &TokenLiteral) -> Self::Output {
         if let &TokenLiteral::Nil = value {
             return "nil".into();
         }
         value.to_string()
     }
 
-    fn visit_unary(&mut self, operator: &Token, right: &Expr) -> Self::Result {
+    fn visit_unary(&mut self, operator: &Token, right: &Expr) -> Self::Output {
         self.parenthesize(&operator.lexeme, &vec![right])
     }
 }

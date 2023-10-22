@@ -69,20 +69,20 @@ impl Expr {
     }
 }
 pub trait ExprVisitor {
-    type Result;
+    type Output;
 
-    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Self::Result;
-    fn visit_grouping(&mut self, expression: &Expr) -> Self::Result;
-    fn visit_literal(&mut self, value: &TokenLiteral) -> Self::Result;
-    fn visit_unary(&mut self, operator: &Token, right: &Expr) -> Self::Result;
+    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Self::Output;
+    fn visit_grouping(&mut self, expression: &Expr) -> Self::Output;
+    fn visit_literal(&mut self, value: &TokenLiteral) -> Self::Output;
+    fn visit_unary(&mut self, operator: &Token, right: &Expr) -> Self::Output;
 }
 
 pub trait ExprVisitorData {
-    fn accept<V: ExprVisitor>(&self, visitor: &mut V) -> V::Result;
+    fn accept<V: ExprVisitor>(&self, visitor: &mut V) -> V::Output;
 }
 
 impl ExprVisitorData for Expr {
-    fn accept<V: ExprVisitor>(&self, visitor: &mut V) -> V::Result {
+    fn accept<V: ExprVisitor>(&self, visitor: &mut V) -> V::Output {
         match self {
             Self::Binary {
                 left,
