@@ -1,27 +1,60 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::{
+    environment::Environment,
     errors::RuntimeError,
-    expr::{Expr, ExprVisitor, ExprVisitorData},
+    expr::{Expr, ExprVisitor},
     lox::Lox,
+    stmt::{Stmt, StmtVisitor},
     token::TokenType,
     value::Value,
 };
 
-pub struct Interpreter;
+pub struct Interpreter {
+    environment: Rc<RefCell<Environment>>,
+}
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self
-    }
-
-    pub fn interpret(&mut self, expression: &Expr) {
-        match self.evaluate(expression) {
-            Ok(v) => println!("{}", self.stringify(&v)),
-            Err(e) => Lox::runtime_error(e),
+        Self {
+            environment: Rc::new(RefCell::new(Environment::new())),
         }
     }
 
+    pub fn interpret(&mut self, statements: &Vec<Stmt>) {
+        for stmt in statements {
+            let res = self.execute(stmt);
+            match res {
+                Err(e) => Lox::runtime_error(e),
+                _ => {}
+            };
+        }
+    }
+
+    fn execute(&mut self, statement: &Stmt) -> Result<(), RuntimeError> {
+        statement.accept_visitor(self)
+    }
+
+    fn execute_block(
+        &mut self,
+        statements: &Vec<Option<Stmt>>,
+        environment: Rc<RefCell<Environment>>,
+    ) -> Result<(), RuntimeError> {
+        let previous = self.environment.clone();
+        self.environment = environment;
+        let mut res = Ok(());
+        for statement_opt in statements {
+            res = self.execute(statement_opt.as_ref().unwrap());
+            if res.is_err() {
+                break;
+            }
+        }
+        self.environment = previous;
+        res
+    }
+
     fn evaluate(&mut self, expr: &Expr) -> <Self as ExprVisitor>::Output {
-        expr.accept(self)
+        expr.accept_visitor(self)
     }
 
     fn is_truthy(&self, value: &Value) -> bool {
@@ -73,6 +106,44 @@ impl Interpreter {
             Value::String(v) => v.clone(),
             Value::Bool(v) => v.to_string(),
         }
+    }
+}
+
+impl StmtVisitor for Interpreter {
+    type Output = Result<(), RuntimeError>;
+
+    fn visit_block(&mut self, statements: &Vec<Option<Stmt>>) -> Self::Output {
+        let env = Environment::with_enclosing(self.environment.clone());
+        self.execute_block(statements, Rc::new(RefCell::new(env)))
+    }
+
+    fn visit_expression(&mut self, expression: &Expr) -> Self::Output {
+        self.evaluate(expression)?;
+        Ok(())
+    }
+
+    fn visit_print(&mut self, expression: &Expr) -> Self::Output {
+        let value = self.evaluate(expression)?;
+        println!("{}", self.stringify(&value));
+        Ok(())
+    }
+
+    fn visit_var(
+        &mut self,
+        name: &crate::token::Token,
+        initializer: &Option<Expr>,
+    ) -> Self::Output {
+        let mut value = Value::Nil;
+        match initializer {
+            Some(expr) => {
+                value = self.evaluate(expr)?;
+            }
+            _ => {}
+        };
+        self.environment
+            .borrow_mut()
+            .define(name.lexeme.clone(), value);
+        Ok(())
     }
 }
 
@@ -153,5 +224,9 @@ impl ExprVisitor for Interpreter {
             }
             _ => panic!("unreachable"),
         }
+    }
+
+    fn visit_variable(&mut self, name: &crate::token::Token) -> Self::Output {
+        self.environment.borrow().get(name)
     }
 }

@@ -1,4 +1,4 @@
-use crate::expr::{Expr, ExprVisitor, ExprVisitorData};
+use crate::expr::{Expr, ExprVisitor};
 use crate::token::{Token, TokenLiteral};
 
 pub struct AstPrinter;
@@ -8,7 +8,7 @@ impl AstPrinter {
         Self
     }
     pub fn print(&mut self, expr: &Expr) -> String {
-        expr.accept(self)
+        expr.accept_visitor(self)
     }
 }
 
@@ -33,6 +33,10 @@ impl ExprVisitor for AstPrinter {
     fn visit_unary(&mut self, operator: &Token, right: &Expr) -> Self::Output {
         self.parenthesize(&operator.lexeme, &vec![right])
     }
+
+    fn visit_variable(&mut self, name: &Token) -> Self::Output {
+        return name.lexeme.clone();
+    }
 }
 
 impl AstPrinter {
@@ -42,7 +46,7 @@ impl AstPrinter {
         builder.push_str(name);
         for expr in exprs {
             builder.push(' ');
-            builder.push_str(&expr.accept(self));
+            builder.push_str(&expr.accept_visitor(self));
         }
         builder.push(')');
         builder

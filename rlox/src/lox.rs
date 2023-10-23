@@ -63,12 +63,18 @@ impl Lox {
         let mut scanner = Scanner::new(source);
         let tokens = scanner.scan_tokens();
         let mut parser = Parser::new(&tokens);
-        let expression = parser.parse();
+        let statement_opts = parser.parse();
         if Self::had_error() {
             return;
         }
+        let mut statements = Vec::new();
+        for stmt_opt in statement_opts {
+            statements.push(
+                stmt_opt.expect("Nil statement encountered without corresponding parse error."),
+            );
+        }
         let mut interpreter = Interpreter::new();
-        interpreter.interpret(&expression.unwrap());
+        interpreter.interpret(&statements);
     }
 
     pub fn error_on_line(line: usize, message: &str) {
@@ -89,7 +95,7 @@ impl Lox {
     }
 
     fn report(line: usize, loc: &str, message: &str) {
-        write!(io::stderr(), "[line {}] Error{}: {}", line, loc, message).unwrap();
+        write!(io::stderr(), "[line {}] Error {}: {}", line, loc, message).unwrap();
         Self::set_had_error(true);
     }
 

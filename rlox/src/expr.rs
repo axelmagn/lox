@@ -16,6 +16,9 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Variable {
+        name: Token,
+    },
 }
 
 impl Expr {
@@ -67,22 +70,12 @@ impl Expr {
             right: Box::new(right),
         }
     }
-}
-pub trait ExprVisitor {
-    type Output;
 
-    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Self::Output;
-    fn visit_grouping(&mut self, expression: &Expr) -> Self::Output;
-    fn visit_literal(&mut self, value: &TokenLiteral) -> Self::Output;
-    fn visit_unary(&mut self, operator: &Token, right: &Expr) -> Self::Output;
-}
+    pub fn new_variable(name: Token) -> Self {
+        Self::Variable { name }
+    }
 
-pub trait ExprVisitorData {
-    fn accept<V: ExprVisitor>(&self, visitor: &mut V) -> V::Output;
-}
-
-impl ExprVisitorData for Expr {
-    fn accept<V: ExprVisitor>(&self, visitor: &mut V) -> V::Output {
+    pub fn accept_visitor<V: ExprVisitor>(&self, visitor: &mut V) -> V::Output {
         match self {
             Self::Binary {
                 left,
@@ -92,6 +85,16 @@ impl ExprVisitorData for Expr {
             Self::Grouping { expression } => visitor.visit_grouping(expression),
             Self::Literal { value } => visitor.visit_literal(value),
             Self::Unary { operator, right } => visitor.visit_unary(operator, right),
+            Self::Variable { name } => visitor.visit_variable(name),
         }
     }
+}
+pub trait ExprVisitor {
+    type Output;
+
+    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Self::Output;
+    fn visit_grouping(&mut self, expression: &Expr) -> Self::Output;
+    fn visit_literal(&mut self, value: &TokenLiteral) -> Self::Output;
+    fn visit_unary(&mut self, operator: &Token, right: &Expr) -> Self::Output;
+    fn visit_variable(&mut self, name: &Token) -> Self::Output;
 }
