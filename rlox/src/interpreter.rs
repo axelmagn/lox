@@ -6,7 +6,7 @@ use crate::{
     expr::{Expr, ExprVisitor},
     lox::Lox,
     stmt::{Stmt, StmtVisitor},
-    token::TokenType,
+    token::{Token, TokenLiteral, TokenType},
     value::Value,
 };
 
@@ -122,17 +122,28 @@ impl StmtVisitor for Interpreter {
         Ok(())
     }
 
+    fn visit_if(
+        &mut self,
+        condition: &Expr,
+        then_branch: &Stmt,
+        else_branch: &Option<Stmt>,
+    ) -> Self::Output {
+        let cond_res = self.evaluate(condition)?;
+        if self.is_truthy(&cond_res) {
+            self.execute(then_branch)?;
+        } else if else_branch.is_some() {
+            self.execute(else_branch.as_ref().unwrap())?;
+        }
+        Ok(())
+    }
+
     fn visit_print(&mut self, expression: &Expr) -> Self::Output {
         let value = self.evaluate(expression)?;
         println!("{}", self.stringify(&value));
         Ok(())
     }
 
-    fn visit_var(
-        &mut self,
-        name: &crate::token::Token,
-        initializer: &Option<Expr>,
-    ) -> Self::Output {
+    fn visit_var(&mut self, name: &Token, initializer: &Option<Expr>) -> Self::Output {
         let mut value = Value::Nil;
         match initializer {
             Some(expr) => {
@@ -145,17 +156,28 @@ impl StmtVisitor for Interpreter {
             .define(name.lexeme.clone(), value);
         Ok(())
     }
+
+    fn visit_while(&mut self, condition: &Expr, body: &Stmt) -> Self::Output {
+        while {
+            let cond_res = self.evaluate(condition)?;
+            self.is_truthy(&cond_res)
+        } {
+            self.execute(body)?;
+        }
+        Ok(())
+    }
 }
 
 impl ExprVisitor for Interpreter {
     type Output = Result<Value, RuntimeError>;
 
-    fn visit_binary(
-        &mut self,
-        left: &crate::expr::Expr,
-        operator: &crate::token::Token,
-        right: &crate::expr::Expr,
-    ) -> Self::Output {
+    fn visit_assign(&mut self, name: &Token, value: &Expr) -> Self::Output {
+        let value = self.evaluate(value)?;
+        self.environment.borrow_mut().assign(name, value.clone())?;
+        Ok(value)
+    }
+
+    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Self::Output {
         let left = self.evaluate(left)?;
         let right = self.evaluate(right)?;
 
@@ -202,11 +224,11 @@ impl ExprVisitor for Interpreter {
         }
     }
 
-    fn visit_grouping(&mut self, expression: &crate::expr::Expr) -> Self::Output {
+    fn visit_grouping(&mut self, expression: &Expr) -> Self::Output {
         self.evaluate(expression)
     }
 
-    fn visit_literal(&mut self, literal: &crate::token::TokenLiteral) -> Self::Output {
+    fn visit_literal(&mut self, literal: &TokenLiteral) -> Self::Output {
         Ok(Value::from(literal.clone()))
     }
 
@@ -228,5 +250,27 @@ impl ExprVisitor for Interpreter {
 
     fn visit_variable(&mut self, name: &crate::token::Token) -> Self::Output {
         self.environment.borrow().get(name)
+    }
+
+    fn visit_logical(
+        &mut self,
+        left: &Expr,
+        operator: &crate::token::Token,
+        right: &Expr,
+    ) -> Self::Output {
+        let left = self.evaluate(left)?;
+
+        // check if we can short circuit
+        if operator.ttype == TokenType::Or {
+            if self.is_truthy(&left) {
+                return Ok(left);
+            }
+        } else {
+            if !self.is_truthy(&left) {
+                return Ok(left);
+            }
+        }
+
+        return self.evaluate(right);
     }
 }

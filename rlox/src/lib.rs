@@ -1,4 +1,3 @@
-pub mod ast_printer;
 pub mod environment;
 pub mod errors;
 pub mod expr;

@@ -95,7 +95,7 @@ impl Lox {
     }
 
     fn report(line: usize, loc: &str, message: &str) {
-        write!(io::stderr(), "[line {}] Error {}: {}", line, loc, message).unwrap();
+        write!(io::stderr(), "[line {}] Error {}: {}\n", line, loc, message).unwrap();
         Self::set_had_error(true);
     }
 
