@@ -14,6 +14,7 @@ lazy_static! {
         keywords.insert("class".into(), Class);
         keywords.insert("else".into(), Else);
         keywords.insert("false".into(), False);
+        keywords.insert("fun".into(), Fun);
         keywords.insert("for".into(), For);
         keywords.insert("if".into(), If);
         keywords.insert("nil".into(), Nil);

@@ -5,19 +5,27 @@ use crate::{
     errors::RuntimeError,
     expr::{Expr, ExprVisitor},
     lox::Lox,
+    lox_callable::LoxCallable,
+    lox_function::LoxFunction,
+    native_functions::CLOCK_FN,
     stmt::{Stmt, StmtVisitor},
     token::{Token, TokenLiteral, TokenType},
     value::Value,
 };
 
 pub struct Interpreter {
+    pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
+        let mut environment = Environment::new();
+        environment.define("clock".into(), Value::NativeFn(&CLOCK_FN));
+        let globals = Rc::new(RefCell::new(environment));
         Self {
-            environment: Rc::new(RefCell::new(Environment::new())),
+            environment: globals.clone(),
+            globals,
         }
     }
 
@@ -35,7 +43,7 @@ impl Interpreter {
         statement.accept_visitor(self)
     }
 
-    fn execute_block(
+    pub fn execute_block(
         &mut self,
         statements: &Vec<Option<Stmt>>,
         environment: Rc<RefCell<Environment>>,
@@ -105,6 +113,8 @@ impl Interpreter {
             }
             Value::String(v) => v.clone(),
             Value::Bool(v) => v.to_string(),
+            Value::NativeFn(v) => v.string_repr(),
+            Value::LoxFn(v) => v.string_repr(),
         }
     }
 }
@@ -119,6 +129,19 @@ impl StmtVisitor for Interpreter {
 
     fn visit_expression(&mut self, expression: &Expr) -> Self::Output {
         self.evaluate(expression)?;
+        Ok(())
+    }
+
+    fn visit_function(
+        &mut self,
+        name: &Token,
+        params: &[Token],
+        body: &[Option<Stmt>],
+    ) -> Self::Output {
+        let function = LoxFunction::new(name, params, body, self.environment.clone());
+        self.environment
+            .borrow_mut()
+            .define(name.lexeme.clone(), Value::LoxFn(function));
         Ok(())
     }
 
@@ -141,6 +164,15 @@ impl StmtVisitor for Interpreter {
         let value = self.evaluate(expression)?;
         println!("{}", self.stringify(&value));
         Ok(())
+    }
+
+    fn visit_return(&mut self, keyword: &Token, value: &Expr) -> Self::Output {
+        let value = self.evaluate(value)?;
+        Err(RuntimeError::new_return(
+            keyword.clone(),
+            "return".into(),
+            value,
+        ))
     }
 
     fn visit_var(&mut self, name: &Token, initializer: &Option<Expr>) -> Self::Output {
@@ -204,9 +236,14 @@ impl ExprVisitor for Interpreter {
                 let (left, right) = self.check_number_operands(operator, &left, &right)?;
                 Ok(Value::from(left - right))
             }
-            TokenType::Plus => match (left, right) {
+            TokenType::Plus => match (&left, &right) {
                 (Value::Number(left), Value::Number(right)) => Ok(Value::from(left + right)),
-                (Value::String(left), Value::String(right)) => Ok(Value::from(left + &right)),
+                (Value::String(left), Value::String(right)) => {
+                    Ok(Value::from(format!("{}{}", left, right)))
+                }
+                (Value::String(left), _) => {
+                    Ok(Value::from(format!("{}{}", left, self.stringify(&right))))
+                }
                 _ => Err(RuntimeError::new(
                     operator.clone(),
                     "Operands must be two numbers or two strings.".into(),
@@ -222,6 +259,39 @@ impl ExprVisitor for Interpreter {
             }
             _ => panic!("unreachable"),
         }
+    }
+
+    fn visit_call(&mut self, callee: &Expr, paren: &Token, arguments: &[Expr]) -> Self::Output {
+        let callee = self.evaluate(callee)?;
+
+        let mut argument_values = Vec::new();
+        for argument in arguments {
+            argument_values.push(self.evaluate(argument)?);
+        }
+
+        let function: &dyn LoxCallable = match &callee {
+            Value::NativeFn(f) => *f,
+            Value::LoxFn(f) => f,
+            _ => {
+                return Err(RuntimeError::new(
+                    paren.clone(),
+                    "Can only call functions and classes.".into(),
+                ));
+            }
+        };
+
+        if arguments.len() != function.arity() {
+            return Err(RuntimeError::new(
+                paren.clone(),
+                format!(
+                    "Expected {} arguments but got {}.",
+                    function.arity(),
+                    arguments.len()
+                ),
+            ));
+        }
+
+        function.call(self, &argument_values)
     }
 
     fn visit_grouping(&mut self, expression: &Expr) -> Self::Output {

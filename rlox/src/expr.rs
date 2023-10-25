@@ -10,6 +10,11 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Call {
+        callee: Box<Expr>,
+        paren: Token,
+        arguments: Vec<Expr>,
+    },
     Grouping {
         expression: Box<Expr>,
     },
@@ -42,6 +47,14 @@ impl Expr {
             left: Box::new(left),
             operator,
             right: Box::new(right),
+        }
+    }
+
+    pub fn new_call(callee: Expr, paren: Token, arguments: Vec<Expr>) -> Self {
+        Self::Call {
+            callee: Box::new(callee),
+            paren,
+            arguments,
         }
     }
 
@@ -106,6 +119,11 @@ impl Expr {
                 operator,
                 right,
             } => visitor.visit_binary(left, operator, right),
+            Self::Call {
+                callee,
+                paren,
+                arguments,
+            } => visitor.visit_call(callee, paren, arguments),
             Self::Grouping { expression } => visitor.visit_grouping(expression),
             Self::Literal { value } => visitor.visit_literal(value),
             Self::Logical {
@@ -123,6 +141,7 @@ pub trait ExprVisitor {
 
     fn visit_assign(&mut self, name: &Token, value: &Expr) -> Self::Output;
     fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Self::Output;
+    fn visit_call(&mut self, callee: &Expr, paren: &Token, arguments: &[Expr]) -> Self::Output;
     fn visit_grouping(&mut self, expression: &Expr) -> Self::Output;
     fn visit_literal(&mut self, value: &TokenLiteral) -> Self::Output;
     fn visit_logical(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Self::Output;

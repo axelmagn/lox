@@ -1,13 +1,26 @@
-use crate::token::Token;
+use crate::{token::Token, value::Value};
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct RuntimeError {
     pub token: Token,
     pub msg: String,
+    pub return_value: Option<Value>,
 }
 
 impl RuntimeError {
     pub fn new(token: Token, msg: String) -> Self {
-        Self { token, msg }
+        Self {
+            token,
+            msg,
+            return_value: None,
+        }
+    }
+
+    pub fn new_return(token: Token, msg: String, return_value: Value) -> Self {
+        Self {
+            token,
+            msg,
+            return_value: Some(return_value),
+        }
     }
 }

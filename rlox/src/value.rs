@@ -1,12 +1,14 @@
-use crate::token::TokenLiteral;
+use crate::{lox_callable::LoxCallable, lox_function::LoxFunction, token::TokenLiteral};
 
 /// Value of an evaluated expression
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Value {
     Nil,
     String(String),
     Number(f64),
     Bool(bool),
+    NativeFn(&'static dyn LoxCallable),
+    LoxFn(LoxFunction),
 }
 
 impl From<TokenLiteral> for Value {
