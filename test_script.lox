@@ -22,3 +22,10 @@ fun makeCounter() {
 var counter = makeCounter();
 counter(); // "1".
 counter(); // "2".
+
+var a = "outer";
+{
+  print a;
+  var a = "inner";
+  print a;
+}
