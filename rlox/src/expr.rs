@@ -1,5 +1,8 @@
+use ordered_float::OrderedFloat;
+
 use crate::token::{Token, TokenLiteral};
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Expr {
     Assign {
         name: Token,
@@ -80,7 +83,7 @@ impl Expr {
         }
     }
 
-    pub fn new_literal_num(value: f64) -> Self {
+    pub fn new_literal_num(value: OrderedFloat<f64>) -> Self {
         Self::Literal {
             value: TokenLiteral::Number(value),
         }

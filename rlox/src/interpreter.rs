@@ -1,4 +1,6 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
+
+use ordered_float::OrderedFloat;
 
 use crate::{
     environment::Environment,
@@ -16,6 +18,7 @@ use crate::{
 pub struct Interpreter {
     pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
+    locals: HashMap<Expr, usize>,
 }
 
 impl Interpreter {
@@ -26,6 +29,7 @@ impl Interpreter {
         Self {
             environment: globals.clone(),
             globals,
+            locals: HashMap::new(),
         }
     }
 
@@ -33,9 +37,29 @@ impl Interpreter {
         for stmt in statements {
             let res = self.execute(stmt);
             match res {
-                Err(e) => Lox::runtime_error(e),
+                Err(e) => {
+                    Lox::runtime_error(e);
+                    return;
+                }
                 _ => {}
             };
+        }
+    }
+
+    pub fn resolve(&mut self, expr: &Expr, depth: usize) {
+        self.locals.insert(expr.clone(), depth);
+    }
+
+    fn look_up_variable(&self, name: &Token, expr: &Expr) -> Result<Value, RuntimeError> {
+        let distance = self.locals.get(expr);
+        if let Some(distance) = distance {
+            Ok(self
+                .environment
+                .borrow()
+                .get_at(*distance, &name.lexeme)
+                .unwrap())
+        } else {
+            self.globals.borrow().get(name)
         }
     }
 
@@ -77,7 +101,7 @@ impl Interpreter {
         &self,
         operator: &crate::token::Token,
         operand: &Value,
-    ) -> Result<f64, RuntimeError> {
+    ) -> Result<OrderedFloat<f64>, RuntimeError> {
         match operand {
             Value::Number(n) => Ok(*n),
             _ => Err(RuntimeError::new(
@@ -91,7 +115,7 @@ impl Interpreter {
         operator: &crate::token::Token,
         left: &Value,
         right: &Value,
-    ) -> Result<(f64, f64), RuntimeError> {
+    ) -> Result<(OrderedFloat<f64>, OrderedFloat<f64>), RuntimeError> {
         match (left, right) {
             (Value::Number(l), Value::Number(r)) => Ok((*l, *r)),
             _ => Err(RuntimeError::new(
@@ -203,9 +227,19 @@ impl StmtVisitor for Interpreter {
 impl ExprVisitor for Interpreter {
     type Output = Result<Value, RuntimeError>;
 
-    fn visit_assign(&mut self, name: &Token, value: &Expr) -> Self::Output {
-        let value = self.evaluate(value)?;
-        self.environment.borrow_mut().assign(name, value.clone())?;
+    fn visit_assign(&mut self, name: &Token, value_expr: &Expr) -> Self::Output {
+        let value = self.evaluate(value_expr)?;
+
+        let expr = Expr::new_assign(name.clone(), value_expr.clone()); // hack
+        let distance = self.locals.get(&expr);
+        if let Some(distance) = distance {
+            self.environment
+                .borrow_mut()
+                .assign_at(*distance, name, &value);
+        } else {
+            self.globals.borrow_mut().assign(name, value.clone())?;
+        }
+
         Ok(value)
     }
 
@@ -237,7 +271,7 @@ impl ExprVisitor for Interpreter {
                 Ok(Value::from(left - right))
             }
             TokenType::Plus => match (&left, &right) {
-                (Value::Number(left), Value::Number(right)) => Ok(Value::from(left + right)),
+                (Value::Number(left), Value::Number(right)) => Ok(Value::from(*left + *right)),
                 (Value::String(left), Value::String(right)) => {
                     Ok(Value::from(format!("{}{}", left, right)))
                 }
@@ -319,7 +353,7 @@ impl ExprVisitor for Interpreter {
     }
 
     fn visit_variable(&mut self, name: &crate::token::Token) -> Self::Output {
-        self.environment.borrow().get(name)
+        self.look_up_variable(name, &Expr::new_variable(name.clone()))
     }
 
     fn visit_logical(

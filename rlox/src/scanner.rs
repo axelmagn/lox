@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use ordered_float::OrderedFloat;
 use std::collections::HashMap;
 
 use crate::{
@@ -55,7 +56,13 @@ impl Scanner {
             self.scan_token();
         }
 
-        let token = Token::new(TokenType::EOF, "", &TokenLiteral::Nil, self.line);
+        let token = Token::new(
+            TokenType::EOF,
+            "",
+            &TokenLiteral::Nil,
+            self.line,
+            self.start,
+        );
         self.tokens.push(token);
         self.tokens.clone()
     }
@@ -169,7 +176,7 @@ impl Scanner {
         }
 
         let value_str: String = self.source[self.start..self.current].iter().collect();
-        let value: f64 = value_str.parse::<f64>().unwrap();
+        let value = OrderedFloat::from(value_str.parse::<f64>().unwrap());
         self.add_token_literal(TokenType::Number, &TokenLiteral::Number(value))
     }
 
@@ -200,7 +207,7 @@ impl Scanner {
     fn add_token_literal(&mut self, ttype: TokenType, literal: &TokenLiteral) {
         let text: String = self.source[self.start..self.current].iter().collect();
         self.tokens
-            .push(Token::new(ttype, &text, literal, self.line));
+            .push(Token::new(ttype, &text, literal, self.line, self.start));
     }
 
     fn try_match(&mut self, expected: char) -> bool {

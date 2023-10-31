@@ -7,6 +7,7 @@ pub mod lox_callable;
 pub mod lox_function;
 pub mod native_functions;
 pub mod parser;
+pub mod resolver;
 pub mod scanner;
 pub mod stmt;
 pub mod token;

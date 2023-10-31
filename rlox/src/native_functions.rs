@@ -1,5 +1,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use ordered_float::OrderedFloat;
+
 use crate::{
     errors::RuntimeError, interpreter::Interpreter, lox_callable::LoxCallable, value::Value,
 };
@@ -22,7 +24,7 @@ impl LoxCallable for Clock {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs_f64();
-        Ok(Value::Number(now))
+        Ok(Value::Number(OrderedFloat::from(now)))
     }
 
     fn string_repr(&self) -> String {

@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::Mutex;
 use std::{
     env, fs,
@@ -8,6 +10,7 @@ use std::{
 use crate::errors::RuntimeError;
 use crate::interpreter::Interpreter;
 use crate::parser::Parser;
+use crate::resolver::Resolver;
 use crate::scanner::Scanner;
 use crate::token::{Token, TokenType};
 
@@ -67,14 +70,19 @@ impl Lox {
         if Self::had_error() {
             return;
         }
+
+        let interpreter = Rc::new(RefCell::new(Interpreter::new()));
+        let mut resolver = Resolver::new(interpreter.clone());
+        resolver.resolve_stmt_opts(&statement_opts);
+
         let mut statements = Vec::new();
         for stmt_opt in statement_opts {
             statements.push(
                 stmt_opt.expect("Nil statement encountered without corresponding parse error."),
             );
         }
-        let mut interpreter = Interpreter::new();
-        interpreter.interpret(&statements);
+
+        interpreter.borrow_mut().interpret(&statements);
     }
 
     pub fn error_on_line(line: usize, message: &str) {
@@ -90,7 +98,7 @@ impl Lox {
     }
 
     pub fn runtime_error(error: RuntimeError) {
-        println!("{}\n[line {}]", error.msg, error.token.line);
+        println!("[line {}] Error: {}", error.token.line, error.msg);
         Self::set_had_runtime_error(true);
     }
 

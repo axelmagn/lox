@@ -1,3 +1,5 @@
+use ordered_float::OrderedFloat;
+
 use crate::{lox_callable::LoxCallable, lox_function::LoxFunction, token::TokenLiteral};
 
 /// Value of an evaluated expression
@@ -5,7 +7,7 @@ use crate::{lox_callable::LoxCallable, lox_function::LoxFunction, token::TokenLi
 pub enum Value {
     Nil,
     String(String),
-    Number(f64),
+    Number(OrderedFloat<f64>),
     Bool(bool),
     NativeFn(&'static dyn LoxCallable),
     LoxFn(LoxFunction),
@@ -28,8 +30,8 @@ impl From<String> for Value {
     }
 }
 
-impl From<f64> for Value {
-    fn from(value: f64) -> Self {
+impl From<OrderedFloat<f64>> for Value {
+    fn from(value: OrderedFloat<f64>) -> Self {
         Self::Number(value)
     }
 }

@@ -1,20 +1,31 @@
 use core::fmt;
+use std::hash::Hash;
 
-#[derive(Debug, Clone)]
+use ordered_float::OrderedFloat;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Token {
     pub ttype: TokenType,
     pub lexeme: String,
     pub literal: TokenLiteral,
     pub line: usize,
+    pub cursor: usize,
 }
 
 impl Token {
-    pub fn new(ttype: TokenType, lexeme: &str, literal: &TokenLiteral, line: usize) -> Self {
+    pub fn new(
+        ttype: TokenType,
+        lexeme: &str,
+        literal: &TokenLiteral,
+        line: usize,
+        cursor: usize,
+    ) -> Self {
         Self {
             ttype,
             lexeme: lexeme.into(),
             literal: literal.clone(),
             line,
+            cursor,
         }
     }
 }
@@ -25,7 +36,7 @@ impl fmt::Display for Token {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen,
@@ -83,11 +94,11 @@ impl fmt::Display for TokenType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TokenLiteral {
     Nil,
     String(String),
-    Number(f64),
+    Number(OrderedFloat<f64>),
     Bool(bool),
 }
 
