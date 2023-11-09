@@ -7,6 +7,10 @@ pub enum Stmt {
     Block {
         statements: Vec<Option<Stmt>>,
     },
+    Class {
+        name: Token,
+        methods: Vec<Stmt>,
+    },
     Expression {
         expression: Rc<Expr>,
     },
@@ -40,6 +44,10 @@ pub enum Stmt {
 impl Stmt {
     pub fn new_block(statements: Vec<Option<Stmt>>) -> Self {
         Self::Block { statements }
+    }
+
+    pub fn new_class(name: Token, methods: Vec<Stmt>) -> Self {
+        Self::Class { name, methods }
     }
 
     pub fn new_expression(expression: Expr) -> Self {
@@ -89,6 +97,7 @@ impl Stmt {
     pub fn accept_visitor<V: StmtVisitor>(&self, visitor: &mut V) -> V::Output {
         match self {
             Self::Block { statements } => visitor.visit_block(statements),
+            Self::Class { name, methods } => visitor.visit_class(name, methods),
             Self::Expression { expression } => visitor.visit_expression(expression),
             Self::Function { name, params, body } => visitor.visit_function(name, params, body),
             Self::If {
@@ -108,6 +117,7 @@ pub trait StmtVisitor {
     type Output;
 
     fn visit_block(&mut self, statements: &Vec<Option<Stmt>>) -> Self::Output;
+    fn visit_class(&mut self, name: &Token, methods: &Vec<Stmt>) -> Self::Output;
     fn visit_expression(&mut self, expression: &Expr) -> Self::Output;
     fn visit_function(
         &mut self,

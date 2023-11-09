@@ -110,6 +110,11 @@ impl StmtVisitor for Resolver {
         self.end_scope();
     }
 
+    fn visit_class(&mut self, name: &Token, _methods: &Vec<Stmt>) -> Self::Output {
+        self.declare(name);
+        self.define(name);
+    }
+
     fn visit_expression(&mut self, expression: &Expr) -> Self::Output {
         self.resolve_expr(expression);
     }

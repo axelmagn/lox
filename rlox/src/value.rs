@@ -1,6 +1,8 @@
 use ordered_float::OrderedFloat;
 
-use crate::{lox_callable::LoxCallable, lox_function::LoxFunction, token::TokenLiteral};
+use crate::{
+    lox_callable::LoxCallable, lox_class::LoxClass, lox_function::LoxFunction, token::TokenLiteral,
+};
 
 /// Value of an evaluated expression
 #[derive(Clone)]
@@ -11,6 +13,7 @@ pub enum Value {
     Bool(bool),
     NativeFn(&'static dyn LoxCallable),
     LoxFn(LoxFunction),
+    LoxClass(LoxClass),
 }
 
 impl From<TokenLiteral> for Value {
@@ -42,6 +45,12 @@ impl From<bool> for Value {
     }
 }
 
+impl From<LoxClass> for Value {
+    fn from(value: LoxClass) -> Self {
+        Self::LoxClass(value)
+    }
+}
+
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -50,6 +59,7 @@ impl PartialEq for Value {
             (Self::String(l0), Self::String(r0)) => l0 == r0,
             (Self::Number(l0), Self::Number(r0)) => l0 == r0,
             (Self::Bool(l0), Self::Bool(r0)) => l0 == r0,
+            (Self::LoxClass(l0), Self::LoxClass(r0)) => l0 == r0,
             _ => false,
         }
     }

@@ -8,6 +8,7 @@ use crate::{
     expr::{Expr, ExprVisitor},
     lox::Lox,
     lox_callable::LoxCallable,
+    lox_class::LoxClass,
     lox_function::LoxFunction,
     native_functions::CLOCK_FN,
     stmt::{Stmt, StmtVisitor},
@@ -139,6 +140,7 @@ impl Interpreter {
             Value::Bool(v) => v.to_string(),
             Value::NativeFn(v) => v.string_repr(),
             Value::LoxFn(v) => v.string_repr(),
+            Value::LoxClass(v) => v.to_string(),
         }
     }
 }
@@ -149,6 +151,15 @@ impl StmtVisitor for Interpreter {
     fn visit_block(&mut self, statements: &Vec<Option<Stmt>>) -> Self::Output {
         let env = Environment::with_enclosing(self.environment.clone());
         self.execute_block(statements, Rc::new(RefCell::new(env)))
+    }
+
+    fn visit_class(&mut self, name: &Token, _methods: &Vec<Stmt>) -> Self::Output {
+        self.environment
+            .borrow_mut()
+            .define(name.lexeme.clone(), Value::Nil);
+        let class = LoxClass::new(&name.lexeme).into();
+        self.environment.borrow_mut().assign(name, class)?;
+        Ok(())
     }
 
     fn visit_expression(&mut self, expression: &Expr) -> Self::Output {

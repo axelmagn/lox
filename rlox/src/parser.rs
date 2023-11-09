@@ -26,7 +26,9 @@ impl Parser<'_> {
     }
 
     fn declaration(&mut self) -> Option<Stmt> {
-        let stmt: Result<Stmt, ParseError> = if self.match_token(&[TokenType::Fun]) {
+        let stmt: Result<Stmt, ParseError> = if self.match_token(&[TokenType::Class]) {
+            self.class_declaration()
+        } else if self.match_token(&[TokenType::Fun]) {
             self.function("function")
         } else if self.match_token(&[TokenType::Var]) {
             self.var_declaration()
@@ -40,6 +42,19 @@ impl Parser<'_> {
                 None
             }
         }
+    }
+
+    fn class_declaration(&mut self) -> Result<Stmt, ParseError> {
+        let name = self
+            .consume(TokenType::Identifier, "Expect class name.")?
+            .clone();
+        self.consume(TokenType::LeftBrace, "Expect '{' before class body.")?;
+        let mut methods = Vec::new();
+        while !self.check(TokenType::RightBrace) && !self.is_at_end() {
+            methods.push(self.function("method")?);
+        }
+        self.consume(TokenType::RightBrace, "Expect '}' after class body.")?;
+        Ok(Stmt::new_class(name, methods))
     }
 
     fn statement(&mut self) -> Result<Stmt, ParseError> {
