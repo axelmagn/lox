@@ -7,3 +7,6 @@ class DevonshireCream {
 var pastry = DevonshireCream();
 
 print pastry;
+
+pastry.filling = "cream anglaise";
+print pastry.filling;

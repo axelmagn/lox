@@ -18,6 +18,15 @@ pub enum Expr {
         paren: Token,
         arguments: Vec<Expr>,
     },
+    Get {
+        object: Box<Expr>,
+        name: Token,
+    },
+    Set {
+        object: Box<Expr>,
+        name: Token,
+        value: Box<Expr>,
+    },
     Grouping {
         expression: Box<Expr>,
     },
@@ -58,6 +67,21 @@ impl Expr {
             callee: Box::new(callee),
             paren,
             arguments,
+        }
+    }
+
+    pub fn new_get(object: Expr, name: Token) -> Self {
+        Self::Get {
+            object: Box::new(object),
+            name,
+        }
+    }
+
+    pub fn new_set(object: Expr, name: Token, value: Expr) -> Self {
+        Self::Set {
+            object: Box::new(object),
+            name,
+            value: Box::new(value),
         }
     }
 
@@ -127,6 +151,12 @@ impl Expr {
                 paren,
                 arguments,
             } => visitor.visit_call(callee, paren, arguments),
+            Self::Get { object, name } => visitor.visit_get(object, name),
+            Self::Set {
+                object,
+                name,
+                value,
+            } => visitor.visit_set(object, name, value),
             Self::Grouping { expression } => visitor.visit_grouping(expression),
             Self::Literal { value } => visitor.visit_literal(value),
             Self::Logical {
@@ -145,6 +175,8 @@ pub trait ExprVisitor {
     fn visit_assign(&mut self, name: &Token, value: &Expr) -> Self::Output;
     fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Self::Output;
     fn visit_call(&mut self, callee: &Expr, paren: &Token, arguments: &[Expr]) -> Self::Output;
+    fn visit_get(&mut self, object: &Expr, name: &Token) -> Self::Output;
+    fn visit_set(&mut self, object: &Expr, name: &Token, value: &Expr) -> Self::Output;
     fn visit_grouping(&mut self, expression: &Expr) -> Self::Output;
     fn visit_literal(&mut self, value: &TokenLiteral) -> Self::Output;
     fn visit_logical(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Self::Output;

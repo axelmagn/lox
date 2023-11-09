@@ -189,6 +189,10 @@ impl ExprVisitor for Resolver {
         }
     }
 
+    fn visit_get(&mut self, object: &Expr, _name: &Token) -> Self::Output {
+        self.resolve_expr(object);
+    }
+
     fn visit_grouping(&mut self, expression: &Expr) -> Self::Output {
         self.resolve_expr(expression);
     }
@@ -198,6 +202,11 @@ impl ExprVisitor for Resolver {
     fn visit_logical(&mut self, left: &Expr, _operator: &Token, right: &Expr) -> Self::Output {
         self.resolve_expr(left);
         self.resolve_expr(right);
+    }
+
+    fn visit_set(&mut self, object: &Expr, _name: &Token, value: &Expr) -> Self::Output {
+        self.resolve_expr(value);
+        self.resolve_expr(object);
     }
 
     fn visit_unary(&mut self, _operator: &Token, right: &Expr) -> Self::Output {

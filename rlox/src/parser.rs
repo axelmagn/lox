@@ -245,6 +245,9 @@ impl Parser<'_> {
                 Expr::Variable { name } => {
                     return Ok(Expr::new_assign(name, value));
                 }
+                Expr::Get { object, name } => {
+                    return Ok(Expr::new_set(*object, name, value));
+                }
                 _ => {}
             }
 
@@ -346,6 +349,10 @@ impl Parser<'_> {
         loop {
             if self.match_token(&[TokenType::LeftParen]) {
                 expr = self.finish_call(expr)?;
+            } else if self.match_token(&[TokenType::Dot]) {
+                let name =
+                    self.consume(TokenType::Identifier, "Expect property name after '.'.")?;
+                expr = Expr::new_get(expr, name.clone());
             } else {
                 break;
             }

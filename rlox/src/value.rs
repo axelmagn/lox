@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use ordered_float::OrderedFloat;
 
 use crate::{
@@ -15,7 +17,7 @@ pub enum Value {
     NativeFn(&'static dyn LoxCallable),
     LoxFn(LoxFunction),
     LoxClass(LoxClass),
-    LoxInstance(LoxInstance),
+    LoxInstance(Rc<RefCell<LoxInstance>>),
 }
 
 impl From<TokenLiteral> for Value {
@@ -55,7 +57,7 @@ impl From<LoxClass> for Value {
 
 impl From<LoxInstance> for Value {
     fn from(value: LoxInstance) -> Self {
-        Self::LoxInstance(value)
+        Self::LoxInstance(Rc::new(RefCell::new(value)))
     }
 }
 

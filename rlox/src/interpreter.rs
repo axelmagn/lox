@@ -141,7 +141,7 @@ impl Interpreter {
             Value::NativeFn(v) => v.string_repr(),
             Value::LoxFn(v) => v.string_repr(),
             Value::LoxClass(v) => v.to_string(),
-            Value::LoxInstance(v) => v.to_string(),
+            Value::LoxInstance(v) => v.borrow().to_string(),
         }
     }
 }
@@ -341,6 +341,17 @@ impl ExprVisitor for Interpreter {
         function.call(self, &argument_values)
     }
 
+    fn visit_get(&mut self, object: &Expr, name: &Token) -> Self::Output {
+        let object = self.evaluate(object)?;
+        if let Value::LoxInstance(instance) = object {
+            return instance.borrow().get(name);
+        }
+        Err(RuntimeError::new(
+            name.clone(),
+            "Only instances have properties.".into(),
+        ))
+    }
+
     fn visit_grouping(&mut self, expression: &Expr) -> Self::Output {
         self.evaluate(expression)
     }
@@ -389,5 +400,19 @@ impl ExprVisitor for Interpreter {
         }
 
         return self.evaluate(right);
+    }
+
+    fn visit_set(&mut self, object: &Expr, name: &Token, value: &Expr) -> Self::Output {
+        let object = self.evaluate(object)?;
+        if let Value::LoxInstance(instance) = object {
+            let value = self.evaluate(value)?;
+            instance.borrow_mut().set(name, &value);
+            Ok(value)
+        } else {
+            Err(RuntimeError::new(
+                name.clone(),
+                "Only instances have fields.".into(),
+            ))
+        }
     }
 }
