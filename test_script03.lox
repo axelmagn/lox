@@ -4,4 +4,6 @@ class DevonshireCream {
     }
 }
 
-print DevonshireCream;
+var pastry = DevonshireCream();
+
+print pastry;

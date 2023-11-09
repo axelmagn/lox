@@ -1,7 +1,8 @@
 use ordered_float::OrderedFloat;
 
 use crate::{
-    lox_callable::LoxCallable, lox_class::LoxClass, lox_function::LoxFunction, token::TokenLiteral,
+    lox_callable::LoxCallable, lox_class::LoxClass, lox_function::LoxFunction,
+    lox_instance::LoxInstance, token::TokenLiteral,
 };
 
 /// Value of an evaluated expression
@@ -14,6 +15,7 @@ pub enum Value {
     NativeFn(&'static dyn LoxCallable),
     LoxFn(LoxFunction),
     LoxClass(LoxClass),
+    LoxInstance(LoxInstance),
 }
 
 impl From<TokenLiteral> for Value {
@@ -48,6 +50,12 @@ impl From<bool> for Value {
 impl From<LoxClass> for Value {
     fn from(value: LoxClass) -> Self {
         Self::LoxClass(value)
+    }
+}
+
+impl From<LoxInstance> for Value {
+    fn from(value: LoxInstance) -> Self {
+        Self::LoxInstance(value)
     }
 }
 

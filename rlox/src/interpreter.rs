@@ -141,6 +141,7 @@ impl Interpreter {
             Value::NativeFn(v) => v.string_repr(),
             Value::LoxFn(v) => v.string_repr(),
             Value::LoxClass(v) => v.to_string(),
+            Value::LoxInstance(v) => v.to_string(),
         }
     }
 }
@@ -317,6 +318,7 @@ impl ExprVisitor for Interpreter {
         let function: &dyn LoxCallable = match &callee {
             Value::NativeFn(f) => *f,
             Value::LoxFn(f) => f,
+            Value::LoxClass(f) => f,
             _ => {
                 return Err(RuntimeError::new(
                     paren.clone(),
