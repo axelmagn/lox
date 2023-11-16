@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{expr::Expr, token::Token};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Stmt {
     Block {
         statements: Vec<Option<Stmt>>,

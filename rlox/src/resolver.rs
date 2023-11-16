@@ -18,6 +18,7 @@ pub struct Resolver {
 enum FunctionType {
     None,
     Function,
+    Method,
 }
 
 impl Resolver {
@@ -110,9 +111,25 @@ impl StmtVisitor for Resolver {
         self.end_scope();
     }
 
-    fn visit_class(&mut self, name: &Token, _methods: &Vec<Stmt>) -> Self::Output {
+    fn visit_class(&mut self, name: &Token, methods: &Vec<Stmt>) -> Self::Output {
         self.declare(name);
         self.define(name);
+
+        for method in methods {
+            match method {
+                Stmt::Function {
+                    name: _,
+                    params,
+                    body,
+                } => {
+                    let declaration = FunctionType::Method;
+                    self.resolve_function(&params, &body, declaration);
+                }
+                _ => {
+                    unreachable!();
+                }
+            }
+        }
     }
 
     fn visit_expression(&mut self, expression: &Expr) -> Self::Output {

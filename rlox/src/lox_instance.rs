@@ -17,13 +17,18 @@ impl LoxInstance {
     }
 
     pub fn get(&self, name: &Token) -> Result<Value, RuntimeError> {
-        match self.fields.get(&name.lexeme).cloned() {
-            Some(v) => Ok(v),
-            None => Err(RuntimeError::new(
-                name.clone(),
-                format!("Undefined property '{}'", name.lexeme),
-            )),
+        if let Some(v) = self.fields.get(&name.lexeme) {
+            return Ok(v.clone());
         }
+
+        if let Some(method) = self.class.find_method(&name.lexeme) {
+            return Ok(method.clone().into());
+        }
+
+        Err(RuntimeError::new(
+            name.clone(),
+            format!("Undefined property '{}'", name.lexeme),
+        ))
     }
 
     pub fn set(&mut self, name: &Token, value: &Value) {

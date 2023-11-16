@@ -49,6 +49,12 @@ impl From<bool> for Value {
     }
 }
 
+impl From<LoxFunction> for Value {
+    fn from(value: LoxFunction) -> Self {
+        Self::LoxFn(value)
+    }
+}
+
 impl From<LoxClass> for Value {
     fn from(value: LoxClass) -> Self {
         Self::LoxClass(value)

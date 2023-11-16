@@ -1,12 +1,7 @@
-class DevonshireCream {
-    serveOn() {
-        return "Scones";
+class Bacon {
+    eat() {
+        print "Crunch crunch cruch!";
     }
 }
 
-var pastry = DevonshireCream();
-
-print pastry;
-
-pastry.filling = "cream anglaise";
-print pastry.filling;
+Bacon().eat();

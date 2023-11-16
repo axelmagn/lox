@@ -1,15 +1,23 @@
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
-use crate::{lox_callable::LoxCallable, lox_instance::LoxInstance};
+use crate::{lox_callable::LoxCallable, lox_function::LoxFunction, lox_instance::LoxInstance};
 
-#[derive(Clone, Debug, Hash, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct LoxClass {
     name: String,
+    methods: HashMap<String, LoxFunction>,
 }
 
 impl LoxClass {
-    pub fn new(name: &str) -> Self {
-        Self { name: name.into() }
+    pub fn new(name: &str, methods: HashMap<String, LoxFunction>) -> Self {
+        Self {
+            name: name.into(),
+            methods,
+        }
+    }
+
+    pub fn find_method(&self, name: &str) -> Option<&LoxFunction> {
+        self.methods.get(name)
     }
 }
 

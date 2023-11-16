@@ -59,3 +59,12 @@ impl LoxCallable for LoxFunction {
         format!("<fn {}>", self.name.lexeme)
     }
 }
+
+impl PartialEq for LoxFunction {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+            && self.params == other.params
+            && self.body == other.body
+            && self.closure.as_ptr() == other.closure.as_ptr()
+    }
+}

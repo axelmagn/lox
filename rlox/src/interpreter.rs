@@ -154,11 +154,23 @@ impl StmtVisitor for Interpreter {
         self.execute_block(statements, Rc::new(RefCell::new(env)))
     }
 
-    fn visit_class(&mut self, name: &Token, _methods: &Vec<Stmt>) -> Self::Output {
+    fn visit_class(&mut self, name: &Token, methods: &Vec<Stmt>) -> Self::Output {
         self.environment
             .borrow_mut()
             .define(name.lexeme.clone(), Value::Nil);
-        let class = LoxClass::new(&name.lexeme).into();
+
+        let mut method_values = HashMap::new();
+        for method in methods {
+            match method {
+                Stmt::Function { name, params, body } => {
+                    let function = LoxFunction::new(name, params, body, self.environment.clone());
+                    method_values.insert(name.lexeme.clone(), function);
+                }
+                _ => unreachable!(),
+            }
+        }
+
+        let class = LoxClass::new(&name.lexeme, method_values).into();
         self.environment.borrow_mut().assign(name, class)?;
         Ok(())
     }
