@@ -67,6 +67,12 @@ impl From<LoxInstance> for Value {
     }
 }
 
+impl From<Rc<RefCell<LoxInstance>>> for Value {
+    fn from(value: Rc<RefCell<LoxInstance>>) -> Self {
+        Self::LoxInstance(value)
+    }
+}
+
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {

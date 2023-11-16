@@ -397,6 +397,9 @@ impl Parser<'_> {
             self.consume(TokenType::RightParen, "Expect ')' after expression")?;
             return Ok(Expr::new_grouping(expr));
         }
+        if self.match_token(&[TokenType::This]) {
+            return Ok(Expr::new_this(self.previous().clone()));
+        }
         if self.match_token(&[TokenType::Identifier]) {
             return Ok(Expr::new_variable(self.previous().clone()));
         }

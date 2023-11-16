@@ -12,6 +12,7 @@ pub struct Resolver {
     interpreter: Rc<RefCell<Interpreter>>,
     scopes: Vec<HashMap<String, bool>>,
     current_function: FunctionType,
+    current_class: ClassType,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -21,12 +22,19 @@ enum FunctionType {
     Method,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum ClassType {
+    None,
+    Class,
+}
+
 impl Resolver {
     pub fn new(interpreter: Rc<RefCell<Interpreter>>) -> Self {
         Self {
             interpreter: interpreter.clone(),
             scopes: Vec::new(),
             current_function: FunctionType::None,
+            current_class: ClassType::None,
         }
     }
 
@@ -51,7 +59,7 @@ impl Resolver {
         for i in (0..self.scopes.len()).rev() {
             if self.scopes[i].contains_key(&name.lexeme) {
                 let depth = self.scopes.len() - 1 - i;
-                self.interpreter.borrow_mut().resolve(expr, depth);
+                self.interpreter.as_ref().borrow_mut().resolve(expr, depth);
                 return;
             }
         }
@@ -112,8 +120,14 @@ impl StmtVisitor for Resolver {
     }
 
     fn visit_class(&mut self, name: &Token, methods: &Vec<Stmt>) -> Self::Output {
+        let enclosing_class = self.current_class;
+        self.current_class = ClassType::Class;
+
         self.declare(name);
         self.define(name);
+
+        self.begin_scope();
+        self.scopes.last_mut().unwrap().insert("this".into(), true);
 
         for method in methods {
             match method {
@@ -130,6 +144,10 @@ impl StmtVisitor for Resolver {
                 }
             }
         }
+
+        self.end_scope();
+
+        self.current_class = enclosing_class;
     }
 
     fn visit_expression(&mut self, expression: &Expr) -> Self::Output {
@@ -224,6 +242,15 @@ impl ExprVisitor for Resolver {
     fn visit_set(&mut self, object: &Expr, _name: &Token, value: &Expr) -> Self::Output {
         self.resolve_expr(value);
         self.resolve_expr(object);
+    }
+
+    fn visit_this(&mut self, keyword: &Token) -> Self::Output {
+        if let ClassType::None = self.current_class {
+            Lox::error_on_token(keyword, "Can't use 'this' outside of a class.");
+            return;
+        }
+        let expr = Expr::new_this(keyword.clone());
+        self.resolve_local(&expr, keyword);
     }
 
     fn visit_unary(&mut self, _operator: &Token, right: &Expr) -> Self::Output {

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display};
+use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 
 use crate::{errors::RuntimeError, lox_class::LoxClass, token::Token, value::Value};
 
@@ -16,13 +16,13 @@ impl LoxInstance {
         }
     }
 
-    pub fn get(&self, name: &Token) -> Result<Value, RuntimeError> {
-        if let Some(v) = self.fields.get(&name.lexeme) {
+    pub fn get(instance: Rc<RefCell<LoxInstance>>, name: &Token) -> Result<Value, RuntimeError> {
+        if let Some(v) = instance.borrow().fields.get(&name.lexeme) {
             return Ok(v.clone());
         }
 
-        if let Some(method) = self.class.find_method(&name.lexeme) {
-            return Ok(method.clone().into());
+        if let Some(method) = instance.borrow().class.find_method(&name.lexeme) {
+            return Ok(method.bind(instance.clone()).into());
         }
 
         Err(RuntimeError::new(

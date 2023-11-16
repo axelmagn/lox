@@ -10,6 +10,7 @@ use crate::{
     lox_callable::LoxCallable,
     lox_class::LoxClass,
     lox_function::LoxFunction,
+    lox_instance::LoxInstance,
     native_functions::CLOCK_FN,
     stmt::{Stmt, StmtVisitor},
     token::{Token, TokenLiteral, TokenType},
@@ -356,7 +357,7 @@ impl ExprVisitor for Interpreter {
     fn visit_get(&mut self, object: &Expr, name: &Token) -> Self::Output {
         let object = self.evaluate(object)?;
         if let Value::LoxInstance(instance) = object {
-            return instance.borrow().get(name);
+            return LoxInstance::get(instance, name);
         }
         Err(RuntimeError::new(
             name.clone(),
@@ -426,5 +427,10 @@ impl ExprVisitor for Interpreter {
                 "Only instances have fields.".into(),
             ))
         }
+    }
+
+    fn visit_this(&mut self, keyword: &Token) -> Self::Output {
+        let expr = Expr::new_this(keyword.clone());
+        self.look_up_variable(keyword, &expr)
     }
 }

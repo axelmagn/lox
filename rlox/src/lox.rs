@@ -74,6 +74,9 @@ impl Lox {
         let interpreter = Rc::new(RefCell::new(Interpreter::new()));
         let mut resolver = Resolver::new(interpreter.clone());
         resolver.resolve_stmt_opts(&statement_opts);
+        if Self::had_error() {
+            return;
+        }
 
         let mut statements = Vec::new();
         for stmt_opt in statement_opts {

@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     environment::Environment, errors::RuntimeError, interpreter::Interpreter,
-    lox_callable::LoxCallable, stmt::Stmt, token::Token, value::Value,
+    lox_callable::LoxCallable, lox_instance::LoxInstance, stmt::Stmt, token::Token, value::Value,
 };
 
 #[derive(Clone)]
@@ -26,6 +26,17 @@ impl LoxFunction {
             body: Vec::from(body),
             closure,
         }
+    }
+
+    pub fn bind(&self, instance: Rc<RefCell<LoxInstance>>) -> Self {
+        let mut environment = Environment::with_enclosing(self.closure.clone());
+        environment.define("this".into(), instance.into());
+        Self::new(
+            &self.name,
+            &self.params,
+            &self.body,
+            Rc::new(RefCell::new(environment)),
+        )
     }
 }
 

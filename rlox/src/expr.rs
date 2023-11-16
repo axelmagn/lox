@@ -27,6 +27,9 @@ pub enum Expr {
         name: Token,
         value: Box<Expr>,
     },
+    This {
+        keyword: Token,
+    },
     Grouping {
         expression: Box<Expr>,
     },
@@ -83,6 +86,10 @@ impl Expr {
             name,
             value: Box::new(value),
         }
+    }
+
+    pub fn new_this(keyword: Token) -> Self {
+        Self::This { keyword }
     }
 
     pub fn new_grouping(expression: Expr) -> Self {
@@ -157,6 +164,7 @@ impl Expr {
                 name,
                 value,
             } => visitor.visit_set(object, name, value),
+            Self::This { keyword } => visitor.visit_this(keyword),
             Self::Grouping { expression } => visitor.visit_grouping(expression),
             Self::Literal { value } => visitor.visit_literal(value),
             Self::Logical {
@@ -177,6 +185,7 @@ pub trait ExprVisitor {
     fn visit_call(&mut self, callee: &Expr, paren: &Token, arguments: &[Expr]) -> Self::Output;
     fn visit_get(&mut self, object: &Expr, name: &Token) -> Self::Output;
     fn visit_set(&mut self, object: &Expr, name: &Token, value: &Expr) -> Self::Output;
+    fn visit_this(&mut self, keyword: &Token) -> Self::Output;
     fn visit_grouping(&mut self, expression: &Expr) -> Self::Output;
     fn visit_literal(&mut self, value: &TokenLiteral) -> Self::Output;
     fn visit_logical(&mut self, left: &Expr, operator: &Token, right: &Expr) -> Self::Output;
