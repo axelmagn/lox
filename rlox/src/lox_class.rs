@@ -8,19 +8,28 @@ use crate::{
 #[derive(Clone, PartialEq)]
 pub struct LoxClass {
     name: String,
+    superclass: Option<Box<LoxClass>>,
     methods: HashMap<String, LoxFunction>,
 }
 
 impl LoxClass {
-    pub fn new(name: &str, methods: HashMap<String, LoxFunction>) -> Self {
+    pub fn new(
+        name: &str,
+        superclass: Option<Box<LoxClass>>,
+        methods: HashMap<String, LoxFunction>,
+    ) -> Self {
         Self {
             name: name.into(),
+            superclass,
             methods,
         }
     }
 
     pub fn find_method(&self, name: &str) -> Option<&LoxFunction> {
-        self.methods.get(name)
+        self.methods.get(name).or(self
+            .superclass
+            .as_ref()
+            .and_then(|class| class.find_method(name)))
     }
 }
 

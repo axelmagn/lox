@@ -1,4 +1,10 @@
-class Cake {
+class Confection {
+    issweet() {
+        return true;
+    }
+}
+
+class Cake < Confection {
     init(flavor) {
         this.flavor = flavor;
     }

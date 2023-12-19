@@ -27,6 +27,7 @@ enum FunctionType {
 enum ClassType {
     None,
     Class,
+    Subclass,
 }
 
 impl Resolver {
@@ -120,12 +121,36 @@ impl StmtVisitor for Resolver {
         self.end_scope();
     }
 
-    fn visit_class(&mut self, name: &Token, methods: &Vec<Stmt>) -> Self::Output {
+    fn visit_class(
+        &mut self,
+        name: &Token,
+        superclass: &Option<Expr>,
+        methods: &Vec<Stmt>,
+    ) -> Self::Output {
         let enclosing_class = self.current_class;
         self.current_class = ClassType::Class;
 
         self.declare(name);
         self.define(name);
+
+        match superclass {
+            Some(Expr::Variable {
+                name: superclass_name,
+            }) => {
+                if name == superclass_name {
+                    Lox::error_on_token(superclass_name, "A class can't inherit from itself.");
+                }
+            }
+            Some(_) => unreachable!(),
+            None => {}
+        }
+
+        if let Some(superclass) = superclass {
+            self.current_class = ClassType::Subclass;
+            self.resolve_expr(superclass);
+            self.begin_scope();
+            self.scopes.last_mut().unwrap().insert("super".into(), true);
+        }
 
         self.begin_scope();
         self.scopes.last_mut().unwrap().insert("this".into(), true);
@@ -146,6 +171,10 @@ impl StmtVisitor for Resolver {
         }
 
         self.end_scope();
+
+        if let Some(_) = superclass {
+            self.end_scope();
+        }
 
         self.current_class = enclosing_class;
     }
@@ -247,6 +276,16 @@ impl ExprVisitor for Resolver {
     fn visit_set(&mut self, object: &Expr, _name: &Token, value: &Expr) -> Self::Output {
         self.resolve_expr(value);
         self.resolve_expr(object);
+    }
+
+    fn visit_super(&mut self, keyword: &Token, method: &Token) -> Self::Output {
+        if self.current_class == ClassType::None {
+            Lox::error_on_token(keyword, "Can't use 'super' outside of a class.");
+        } else if self.current_class != ClassType::Subclass {
+            Lox::error_on_token(keyword, "Can't use 'super' in a class with no superclass.");
+        }
+        let expr = Expr::new_super(keyword.clone(), method.clone());
+        self.resolve_local(&expr, keyword);
     }
 
     fn visit_this(&mut self, keyword: &Token) -> Self::Output {

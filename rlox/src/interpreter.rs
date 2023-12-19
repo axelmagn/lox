@@ -155,10 +155,46 @@ impl StmtVisitor for Interpreter {
         self.execute_block(statements, Rc::new(RefCell::new(env)))
     }
 
-    fn visit_class(&mut self, name: &Token, methods: &Vec<Stmt>) -> Self::Output {
+    fn visit_class(
+        &mut self,
+        name: &Token,
+        superclass: &Option<Expr>,
+        methods: &Vec<Stmt>,
+    ) -> Self::Output {
+        let mut superclass_cls = None;
+        if let Some(
+            superclass @ Expr::Variable {
+                name: superclass_name,
+            },
+        ) = superclass
+        {
+            let superclass_val = Some(self.evaluate(superclass)?);
+            match superclass_val {
+                Some(Value::LoxClass(cls)) => superclass_cls = Some(Box::new(cls)),
+                Some(_) => {
+                    return Err(RuntimeError::new(
+                        superclass_name.clone(),
+                        "Superclass must be a class".into(),
+                    ));
+                }
+                None => unreachable!(),
+            }
+        }
+
         self.environment
             .borrow_mut()
             .define(name.lexeme.clone(), Value::Nil);
+
+        let mut is_subclass = false;
+        if let Some(superclass) = &superclass_cls {
+            is_subclass = true;
+            let value = Value::LoxClass(*superclass.clone());
+            self.environment =
+                RefCell::new(Environment::with_enclosing(self.environment.clone())).into();
+            self.environment
+                .borrow_mut()
+                .define("super".to_owned(), value);
+        }
 
         let mut method_values = HashMap::new();
         for method in methods {
@@ -177,7 +213,17 @@ impl StmtVisitor for Interpreter {
             }
         }
 
-        let class = LoxClass::new(&name.lexeme, method_values).into();
+        let class = LoxClass::new(&name.lexeme, superclass_cls, method_values).into();
+        if is_subclass {
+            let outer = self
+                .environment
+                .borrow()
+                .enclosing
+                .as_ref()
+                .unwrap()
+                .clone();
+            self.environment = outer;
+        }
         self.environment.borrow_mut().assign(name, class)?;
         Ok(())
     }
@@ -440,6 +486,34 @@ impl ExprVisitor for Interpreter {
                 name.clone(),
                 "Only instances have fields.".into(),
             ))
+        }
+    }
+
+    fn visit_super(&mut self, keyword: &Token, method: &Token) -> Self::Output {
+        let expr = Expr::new_super(keyword.clone(), method.clone());
+        let distance = self.locals.get(&expr).unwrap();
+        let superclass = self
+            .environment
+            .borrow()
+            .get_at(*distance, "super")
+            .unwrap();
+        let object = self
+            .environment
+            .borrow()
+            .get_at(distance - 1, "this")
+            .unwrap();
+        match (superclass, object) {
+            (Value::LoxClass(superclass), Value::LoxInstance(object)) => {
+                if let Some(method) = superclass.find_method(&method.lexeme) {
+                    return Ok(Value::LoxFn(method.bind(object.clone())));
+                } else {
+                    return Err(RuntimeError::new(
+                        method.clone(),
+                        format!("Undefinted property '{}'.", method.lexeme),
+                    ));
+                }
+            }
+            _ => unreachable!(),
         }
     }
 
