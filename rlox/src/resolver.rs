@@ -19,6 +19,7 @@ pub struct Resolver {
 enum FunctionType {
     None,
     Function,
+    Initializer,
     Method,
 }
 
@@ -131,12 +132,11 @@ impl StmtVisitor for Resolver {
 
         for method in methods {
             match method {
-                Stmt::Function {
-                    name: _,
-                    params,
-                    body,
-                } => {
-                    let declaration = FunctionType::Method;
+                Stmt::Function { name, params, body } => {
+                    let mut declaration = FunctionType::Method;
+                    if name.lexeme == "init" {
+                        declaration = FunctionType::Initializer;
+                    }
                     self.resolve_function(&params, &body, declaration);
                 }
                 _ => {
@@ -182,11 +182,16 @@ impl StmtVisitor for Resolver {
         self.resolve_expr(expression);
     }
 
-    fn visit_return(&mut self, keyword: &Token, value: &Expr) -> Self::Output {
-        if self.current_function == FunctionType::None {
-            Lox::error_on_token(keyword, "Can't return from top-level code.");
+    fn visit_return(&mut self, keyword: &Token, value: &Option<Rc<Expr>>) -> Self::Output {
+        if let Some(value) = value {
+            if self.current_function == FunctionType::None {
+                Lox::error_on_token(keyword, "Can't return from top-level code.");
+            }
+            if self.current_function == FunctionType::Initializer {
+                Lox::error_on_token(keyword, "Can't return a value from a initializer.");
+            }
+            self.resolve_expr(&value);
         }
-        self.resolve_expr(value);
     }
 
     fn visit_var(&mut self, name: &Token, initializer: &Option<Expr>) -> Self::Output {

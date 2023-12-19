@@ -29,3 +29,13 @@ var a = "outer";
   var a = "inner";
   print a;
 }
+
+fun tenacity(num) {
+  if (num / 2 == 5) {
+    print "ten";
+    return;
+  }
+  print "not ten";
+}
+
+tenacity(10);

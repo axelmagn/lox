@@ -29,7 +29,7 @@ pub enum Stmt {
     },
     Return {
         keyword: Token,
-        value: Rc<Expr>,
+        value: Option<Rc<Expr>>,
     },
     Var {
         name: Token,
@@ -77,7 +77,14 @@ impl Stmt {
     pub fn new_return(keyword: Token, value: Expr) -> Self {
         Self::Return {
             keyword,
-            value: Rc::new(value),
+            value: Some(Rc::new(value)),
+        }
+    }
+
+    pub fn new_return_void(keyword: Token) -> Self {
+        Self::Return {
+            keyword,
+            value: None,
         }
     }
 
@@ -132,7 +139,7 @@ pub trait StmtVisitor {
         else_branch: &Option<Stmt>,
     ) -> Self::Output;
     fn visit_print(&mut self, expression: &Expr) -> Self::Output;
-    fn visit_return(&mut self, keyword: &Token, value: &Expr) -> Self::Output;
+    fn visit_return(&mut self, keyword: &Token, value: &Option<Rc<Expr>>) -> Self::Output;
     fn visit_var(&mut self, name: &Token, initializer: &Option<Expr>) -> Self::Output;
     fn visit_while(&mut self, condition: &Expr, body: &Stmt) -> Self::Output;
 }

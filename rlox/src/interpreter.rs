@@ -164,7 +164,13 @@ impl StmtVisitor for Interpreter {
         for method in methods {
             match method {
                 Stmt::Function { name, params, body } => {
-                    let function = LoxFunction::new(name, params, body, self.environment.clone());
+                    let function = LoxFunction::new(
+                        name,
+                        params,
+                        body,
+                        self.environment.clone(),
+                        name.lexeme == "init",
+                    );
                     method_values.insert(name.lexeme.clone(), function);
                 }
                 _ => unreachable!(),
@@ -187,7 +193,7 @@ impl StmtVisitor for Interpreter {
         params: &[Token],
         body: &[Option<Stmt>],
     ) -> Self::Output {
-        let function = LoxFunction::new(name, params, body, self.environment.clone());
+        let function = LoxFunction::new(name, params, body, self.environment.clone(), false);
         self.environment
             .borrow_mut()
             .define(name.lexeme.clone(), Value::LoxFn(function));
@@ -215,13 +221,21 @@ impl StmtVisitor for Interpreter {
         Ok(())
     }
 
-    fn visit_return(&mut self, keyword: &Token, value: &Expr) -> Self::Output {
-        let value = self.evaluate(value)?;
-        Err(RuntimeError::new_return(
-            keyword.clone(),
-            "return".into(),
-            value,
-        ))
+    fn visit_return(&mut self, keyword: &Token, value: &Option<Rc<Expr>>) -> Self::Output {
+        if let Some(value) = value {
+            let value = self.evaluate(value)?;
+            Err(RuntimeError::new_return(
+                keyword.clone(),
+                "return".into(),
+                Some(value),
+            ))
+        } else {
+            Err(RuntimeError::new_return(
+                keyword.clone(),
+                "return".into(),
+                None,
+            ))
+        }
     }
 
     fn visit_var(&mut self, name: &Token, initializer: &Option<Expr>) -> Self::Output {

@@ -11,6 +11,7 @@ pub struct LoxFunction {
     params: Vec<Token>,
     body: Vec<Option<Stmt>>,
     closure: Rc<RefCell<Environment>>,
+    is_initializer: bool,
 }
 
 impl LoxFunction {
@@ -19,12 +20,14 @@ impl LoxFunction {
         params: &[Token],
         body: &[Option<Stmt>],
         closure: Rc<RefCell<Environment>>,
+        is_initializer: bool,
     ) -> Self {
         LoxFunction {
             name: name.clone(),
             params: Vec::from(params),
             body: Vec::from(body),
             closure,
+            is_initializer,
         }
     }
 
@@ -36,6 +39,7 @@ impl LoxFunction {
             &self.params,
             &self.body,
             Rc::new(RefCell::new(environment)),
+            self.is_initializer,
         )
     }
 }
@@ -56,12 +60,33 @@ impl LoxCallable for LoxFunction {
         }
         let environment = Rc::new(RefCell::new(environment));
         match interpreter.execute_block(&self.body, environment) {
-            Ok(_) => Ok(Value::Nil),
+            Ok(_) => {
+                if self.is_initializer {
+                    Ok(self
+                        .closure
+                        .borrow()
+                        .get_at(0, "this")
+                        .expect("Could not find `this` bound to initializer scope"))
+                } else {
+                    Ok(Value::Nil)
+                }
+            }
             Err(RuntimeError {
                 token: _,
                 msg: _,
                 return_value: Some(v),
-            }) => Ok(v),
+            }) => {
+                if self.is_initializer {
+                    let value = self
+                        .closure
+                        .borrow()
+                        .get_at(0, "this")
+                        .expect("no keyword `this` found in initializer scope");
+                    Ok(value)
+                } else {
+                    Ok(v)
+                }
+            }
             Err(e) => Err(e),
         }
     }

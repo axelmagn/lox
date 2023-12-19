@@ -16,11 +16,11 @@ impl RuntimeError {
         }
     }
 
-    pub fn new_return(token: Token, msg: String, return_value: Value) -> Self {
+    pub fn new_return(token: Token, msg: String, return_value: Option<Value>) -> Self {
         Self {
             token,
             msg,
-            return_value: Some(return_value),
+            return_value,
         }
     }
 }
