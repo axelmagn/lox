@@ -39,7 +39,7 @@ term       = { factor ~ (("-" | "+") ~ factor)* }
 factor     = { unary ~ (("/" | "*") ~ unary)* }
 unary      = { ("!" | "-") ~ unary | call }
 call       = { primary ~ ("(" ~ arguments? ~ ")" | "." ~ IDENTIFIER)* }
-primary    = { TRUE | FALSE | NIL | THIS | NUMBER | STRING | IDENTIFIER | grouping | super_term }
+primary    = { TRUE | FALSE | NIL | THIS | NUMBER | STRING | grouping | super_term | IDENTIFIER }
 grouping   = { "(" ~ expression ~ ")" }
 super_term = { "super" ~ "." ~ IDENTIFIER }
 

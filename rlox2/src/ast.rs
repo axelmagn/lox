@@ -67,7 +67,7 @@ pub enum Expr<'i> {
     Get(Get<'i>),
     Set(Set<'i>),
     Super(Super<'i>),
-    This(This<'i>),
+    This(This),
     Grouping(Grouping<'i>),
     Literal(Literal),
     Logical(Logical<'i>),
@@ -170,7 +170,6 @@ impl<'i> Into<Expr<'i>> for Set<'i> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, new)]
 pub struct Super<'i> {
-    pub keyword: Token<'i>,
     pub method: Token<'i>,
 }
 
@@ -181,11 +180,9 @@ impl<'i> Into<Expr<'i>> for Super<'i> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, new)]
-pub struct This<'i> {
-    pub keyword: Token<'i>,
-}
+pub struct This;
 
-impl<'i> Into<Expr<'i>> for This<'i> {
+impl<'i> Into<Expr<'i>> for This {
     fn into(self) -> Expr<'i> {
         Expr::This(self)
     }
