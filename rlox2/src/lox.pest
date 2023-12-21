@@ -39,12 +39,20 @@ term       = { factor ~ (("-" | "+") ~ factor)* }
 factor     = { unary ~ (("/" | "*") ~ unary)* }
 unary      = { ("!" | "-") ~ unary | call }
 call       = { primary ~ ("(" ~ arguments? ~ ")" | "." ~ IDENTIFIER)* }
-primary    = { "true" | "false" | "nil" | "this" | NUMBER | STRING | IDENTIFIER | "(" ~ expression ~ ")" | "super" ~ "." ~ IDENTIFIER }
+primary    = { TRUE | FALSE | NIL | THIS | NUMBER | STRING | IDENTIFIER | grouping | super_term }
+grouping   = { "(" ~ expression ~ ")" }
+super_term = { "super" ~ "." ~ IDENTIFIER }
 
 // Utility rules
 function   = { IDENTIFIER ~ "(" ~ parameters? ~ ")" ~ block }
 parameters = { IDENTIFIER ~ ("," ~ IDENTIFIER)* }
 arguments  = { expression ~ ("," ~ expression)* }
+
+// keyword expressions
+TRUE  = @{ "true" }
+FALSE = @{ "false" }
+NIL   = @{ "nil" }
+THIS  = @{ "this" }
 
 // LEXICAL GRAMMAR
 NUMBER     = @{ DIGIT+ ~ ("." ~ DIGIT+)? }

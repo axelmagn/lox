@@ -7,3 +7,7 @@ edition = "2021"
 pest = "2.7"
 pest_derive = "2.7"
 clap = { version = "4.4", features = ["derive"] }
+ordered-float = "4.1.1"
+derive-new = "0.6.0"
+derive-visitor = "0.3.0"
+anyhow = "1.0.75"
