@@ -71,15 +71,15 @@ static void concatenate() {
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
-#define BINARY_OP(valueType, op)                                               \
-  do {                                                                         \
-    if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {                          \
-      runtimeError("Operands must be numbers.");                               \
-      return INTERPRET_RUNTIME_ERROR;                                          \
-    }                                                                          \
-    double b = AS_NUMBER(pop());                                               \
-    double a = AS_NUMBER(pop());                                               \
-    push(valueType(a op b));                                                   \
+#define BINARY_OP(valueType, op)                      \
+  do {                                                \
+    if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
+      runtimeError("Operands must be numbers.");      \
+      return INTERPRET_RUNTIME_ERROR;                 \
+    }                                                 \
+    double b = AS_NUMBER(pop());                      \
+    double a = AS_NUMBER(pop());                      \
+    push(valueType(a op b));                          \
   } while (false)
 
   for (;;) {
@@ -95,69 +95,76 @@ static InterpretResult run() {
 #endif
     uint8_t instruction;
     switch (instruction = READ_BYTE()) {
-    case OP_CONSTANT: {
-      Value constant = READ_CONSTANT();
-      push(constant);
-      break;
-    }
-    case OP_NIL:
-      push(NIL_VAL);
-      break;
-    case OP_TRUE:
-      push(BOOL_VAL(true));
-      break;
-    case OP_FALSE:
-      push(BOOL_VAL(false));
-      break;
-    case OP_EQUAL: {
-      Value b = pop();
-      Value a = pop();
-      push(BOOL_VAL(valuesEqual(a, b)));
-      break;
-    }
-    case OP_GREATER:
-      BINARY_OP(BOOL_VAL, >);
-      break;
-    case OP_LESS:
-      BINARY_OP(BOOL_VAL, <);
-      break;
-    case OP_ADD: {
-      if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
-        concatenate();
-      } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
-        double b = AS_NUMBER(pop());
-        double a = AS_NUMBER(pop());
-        push(NUMBER_VAL(a + b));
-      } else {
-        runtimeError("Operands must be two numbers or two strings.");
-        return INTERPRET_RUNTIME_ERROR;
+      case OP_CONSTANT: {
+        Value constant = READ_CONSTANT();
+        push(constant);
+        break;
       }
-      break;
-    }
-    case OP_SUBTRACT:
-      BINARY_OP(NUMBER_VAL, -);
-      break;
-    case OP_MULTIPLY:
-      BINARY_OP(NUMBER_VAL, *);
-      break;
-    case OP_DIVIDE:
-      BINARY_OP(NUMBER_VAL, /);
-      break;
-    case OP_NOT:
-      push(BOOL_VAL(isFalsey(pop())));
-      break;
-    case OP_NEGATE:
-      if (!IS_NUMBER(peek(0))) {
-        runtimeError("Operand must be a number.");
-        return INTERPRET_RUNTIME_ERROR;
+      case OP_NIL:
+        push(NIL_VAL);
+        break;
+      case OP_TRUE:
+        push(BOOL_VAL(true));
+        break;
+      case OP_FALSE:
+        push(BOOL_VAL(false));
+        break;
+      case OP_POP:
+        pop();
+        break;
+      case OP_EQUAL: {
+        Value b = pop();
+        Value a = pop();
+        push(BOOL_VAL(valuesEqual(a, b)));
+        break;
       }
-      push(NUMBER_VAL(-AS_NUMBER(pop())));
-      break;
-    case OP_RETURN: {
-      printValue(pop());
-      printf("\n");
-      return INTERPRET_OK;
-    }
+      case OP_GREATER:
+        BINARY_OP(BOOL_VAL, >);
+        break;
+      case OP_LESS:
+        BINARY_OP(BOOL_VAL, <);
+        break;
+      case OP_ADD: {
+        if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+          concatenate();
+        } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+          double b = AS_NUMBER(pop());
+          double a = AS_NUMBER(pop());
+          push(NUMBER_VAL(a + b));
+        } else {
+          runtimeError("Operands must be two numbers or two strings.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        break;
+      }
+      case OP_SUBTRACT:
+        BINARY_OP(NUMBER_VAL, -);
+        break;
+      case OP_MULTIPLY:
+        BINARY_OP(NUMBER_VAL, *);
+        break;
+      case OP_DIVIDE:
+        BINARY_OP(NUMBER_VAL, /);
+        break;
+      case OP_NOT:
+        push(BOOL_VAL(isFalsey(pop())));
+        break;
+      case OP_NEGATE:
+        if (!IS_NUMBER(peek(0))) {
+          runtimeError("Operand must be a number.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        push(NUMBER_VAL(-AS_NUMBER(pop())));
+        break;
+      case OP_PRINT: {
+        printValue(pop());
+        printf("\n");
+        break;
+      }
+      case OP_RETURN: {
+        // Exit the interpreter
+        return INTERPRET_OK;
+      }
     }
   }
 
