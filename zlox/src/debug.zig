@@ -4,6 +4,8 @@ const value = @import("value.zig");
 const Chunk = @import("chunk.zig").Chunk;
 const OpCode = @import("chunk.zig").OpCode;
 
+pub const trace_execution = true;
+
 pub fn disassemble_chunk(chunk: Chunk, name: []const u8) !void {
     try global.stdout().print("== {s} ==\n", .{name});
 
@@ -12,7 +14,7 @@ pub fn disassemble_chunk(chunk: Chunk, name: []const u8) !void {
         offset = try disassemble_instruction(chunk, offset);
     }
 }
-fn disassemble_instruction(chunk: Chunk, offset: usize) !usize {
+pub fn disassemble_instruction(chunk: Chunk, offset: usize) !usize {
     try global.stdout().print("{d:04} ", .{offset});
 
     if (offset > 0 and chunk.lines[offset] == chunk.lines[offset - 1]) {
@@ -24,7 +26,13 @@ fn disassemble_instruction(chunk: Chunk, offset: usize) !usize {
     const op = chunk.op(offset);
     return switch (op) {
         .constant => constant_instruction(op, chunk, offset),
-        .@"return" => simple_instruction(op, offset),
+        .@"return",
+        .add,
+        .subtract,
+        .multiply,
+        .divide,
+        .negate,
+        => simple_instruction(op, offset),
         _ => unknown_instruction(op, offset),
     };
 }

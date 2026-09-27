@@ -7,7 +7,7 @@ Followalong for part 3 of crafting interpreters (A Bytecode Virtual Machine).
 ### Part III: A Bytecode Virtual Machine
 
 - [x] [14. Chunks of Bytecode](https://craftinginterpreters.com/chunks-of-bytecode.html)
-- [ ] [15. A Virtual Machine](https://craftinginterpreters.com/a-virtual-machine.html)
+- [x] [15. A Virtual Machine](https://craftinginterpreters.com/a-virtual-machine.html)
 - [ ] [16. Scanning on Demand](https://craftinginterpreters.com/scanning-on-demand.html)
 - [ ] [17. Compiling Expressions](https://craftinginterpreters.com/compiling-expressions.html)
 - [ ] [18. Types of Values](https://craftinginterpreters.com/types-of-values.html)

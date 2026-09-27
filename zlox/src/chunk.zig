@@ -70,6 +70,11 @@ pub const Chunk = struct {
 
 pub const OpCode = enum(u8) {
     constant,
+    add,
+    subtract,
+    multiply,
+    divide,
+    negate,
     @"return",
     _,
 };
